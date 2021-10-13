@@ -6,6 +6,6 @@ import { Transfer } from '../types/templates/Curve/Curve'
 export function handleTransfer(event: Transfer): void {
   // get curve and load contract
   let curve = Curve.load(event.address.toHexString())
-  curve.numOfTransfers = curve.numOfTransfers.plus(BigInt.fromI32(1))
-  curve.save()
+  // curve.numOfTransfers = curve.numOfTransfers.plus(BigInt.fromI32(1))
+  // curve.save()
 }
