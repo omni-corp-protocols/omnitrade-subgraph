@@ -13,89 +13,89 @@ import {
 import { FACTORY_ADDRESS, ONE_BI, ZERO_BD, ZERO_BI } from './helpers'
 
 export function updateOmnitradeDayData(event: EthereumEvent): OmnitradeDayData {
-  let uniswap = CurveFactory.load(FACTORY_ADDRESS)
+  let omnitrade = CurveFactory.load(FACTORY_ADDRESS)
   let timestamp = event.block.timestamp.toI32()
   let dayID = timestamp / 86400
   let dayStartTimestamp = dayID * 86400
-  let uniswapDayData = OmnitradeDayData.load(dayID.toString())
-  if (uniswapDayData === null) {
-    uniswapDayData = new OmnitradeDayData(dayID.toString())
-    uniswapDayData.date = dayStartTimestamp
-    uniswapDayData.dailyVolumeUSD = ZERO_BD
-    uniswapDayData.dailyVolumeNative = ZERO_BD
-    uniswapDayData.totalVolumeUSD = ZERO_BD
-    uniswapDayData.totalVolumeNative = ZERO_BD
-    uniswapDayData.dailyVolumeUntracked = ZERO_BD
+  let omnitradeDayData = OmnitradeDayData.load(dayID.toString())
+  if (omnitradeDayData === null) {
+    omnitradeDayData = new OmnitradeDayData(dayID.toString())
+    omnitradeDayData.date = dayStartTimestamp
+    omnitradeDayData.dailyVolumeUSD = ZERO_BD
+    omnitradeDayData.dailyVolumeNative = ZERO_BD
+    omnitradeDayData.totalVolumeUSD = ZERO_BD
+    omnitradeDayData.totalVolumeNative = ZERO_BD
+    omnitradeDayData.dailyVolumeUntracked = ZERO_BD
   }
 
-  uniswapDayData.totalLiquidityUSD = uniswap.totalLiquidityUSD
-  uniswapDayData.totalLiquidityNative = uniswap.totalLiquidityNative
-  uniswapDayData.txCount = uniswap.txCount
-  uniswapDayData.save()
+  omnitradeDayData.totalLiquidityUSD = omnitrade.totalLiquidityUSD
+  omnitradeDayData.totalLiquidityNative = omnitrade.totalLiquidityNative
+  omnitradeDayData.txCount = omnitrade.txCount
+  omnitradeDayData.save()
 
-  return uniswapDayData as OmnitradeDayData
+  return omnitradeDayData as OmnitradeDayData
 }
 
 export function updateCurveDayData(event: EthereumEvent): CurveDayData {
   let timestamp = event.block.timestamp.toI32()
   let dayID = timestamp / 86400
   let dayStartTimestamp = dayID * 86400
-  let dayPairID = event.address
+  let dayCurveID = event.address
     .toHexString()
     .concat('-')
     .concat(BigInt.fromI32(dayID).toString())
-  let pair = Curve.load(event.address.toHexString())
-  let pairDayData = CurveDayData.load(dayPairID)
-  if (pairDayData === null) {
-    pairDayData = new CurveDayData(dayPairID)
-    pairDayData.date = dayStartTimestamp
-    pairDayData.token0 = pair.token0
-    pairDayData.token1 = pair.token1
-    pairDayData.curveAddress = event.address
-    pairDayData.dailyVolumeToken0 = ZERO_BD
-    pairDayData.dailyVolumeToken1 = ZERO_BD
-    pairDayData.dailyVolumeUSD = ZERO_BD
-    pairDayData.dailyTxns = ZERO_BI
+  let curve = Curve.load(event.address.toHexString())
+  let curveDayData = CurveDayData.load(dayCurveID)
+  if (curveDayData === null) {
+    curveDayData = new CurveDayData(dayCurveID)
+    curveDayData.date = dayStartTimestamp
+    curveDayData.token0 = curve.token0
+    curveDayData.token1 = curve.token1
+    curveDayData.curveAddress = event.address
+    curveDayData.dailyVolumeToken0 = ZERO_BD
+    curveDayData.dailyVolumeToken1 = ZERO_BD
+    curveDayData.dailyVolumeUSD = ZERO_BD
+    curveDayData.dailyTxns = ZERO_BI
   }
 
-  pairDayData.totalSupply = pair.totalSupply
-  pairDayData.reserve0 = pair.reserve0
-  pairDayData.reserve1 = pair.reserve1
-  pairDayData.reserveUSD = pair.reserveUSD
-  pairDayData.dailyTxns = pairDayData.dailyTxns.plus(ONE_BI)
-  pairDayData.save()
+  curveDayData.totalSupply = curve.totalSupply
+  curveDayData.reserve0 = curve.reserve0
+  curveDayData.reserve1 = curve.reserve1
+  curveDayData.reserveUSD = curve.reserveUSD
+  curveDayData.dailyTxns = curveDayData.dailyTxns.plus(ONE_BI)
+  curveDayData.save()
 
-  return pairDayData as CurveDayData
+  return curveDayData as CurveDayData
 }
 
-export function updatePairHourData(event: EthereumEvent): CurveHourData {
+export function updateCurveHourData(event: EthereumEvent): CurveHourData {
   let timestamp = event.block.timestamp.toI32()
   let hourIndex = timestamp / 3600 // get unique hour within unix history
   let hourStartUnix = hourIndex * 3600 // want the rounded effect
-  let hourPairID = event.address
+  let hourCurveID = event.address
     .toHexString()
     .concat('-')
     .concat(BigInt.fromI32(hourIndex).toString())
-  let pair = Curve.load(event.address.toHexString())
-  let pairHourData = CurveHourData.load(hourPairID)
-  if (pairHourData === null) {
-    pairHourData = new CurveHourData(hourPairID)
-    pairHourData.hourStartUnix = hourStartUnix
-    pairHourData.curve = event.address.toHexString()
-    pairHourData.hourlyVolumeToken0 = ZERO_BD
-    pairHourData.hourlyVolumeToken1 = ZERO_BD
-    pairHourData.hourlyVolumeUSD = ZERO_BD
-    pairHourData.hourlyTxns = ZERO_BI
+  let curve = Curve.load(event.address.toHexString())
+  let curveHourData = CurveHourData.load(hourCurveID)
+  if (curveHourData === null) {
+    curveHourData = new CurveHourData(hourCurveID)
+    curveHourData.hourStartUnix = hourStartUnix
+    curveHourData.curve = event.address.toHexString()
+    curveHourData.hourlyVolumeToken0 = ZERO_BD
+    curveHourData.hourlyVolumeToken1 = ZERO_BD
+    curveHourData.hourlyVolumeUSD = ZERO_BD
+    curveHourData.hourlyTxns = ZERO_BI
   }
 
-  pairHourData.totalSupply = pair.totalSupply
-  pairHourData.reserve0 = pair.reserve0
-  pairHourData.reserve1 = pair.reserve1
-  pairHourData.reserveUSD = pair.reserveUSD
-  pairHourData.hourlyTxns = pairHourData.hourlyTxns.plus(ONE_BI)
-  pairHourData.save()
+  curveHourData.totalSupply = curve.totalSupply
+  curveHourData.reserve0 = curve.reserve0
+  curveHourData.reserve1 = curve.reserve1
+  curveHourData.reserveUSD = curve.reserveUSD
+  curveHourData.hourlyTxns = curveHourData.hourlyTxns.plus(ONE_BI)
+  curveHourData.save()
 
-  return pairHourData as CurveHourData
+  return curveHourData as CurveHourData
 }
 
 export function updateTokenDayData(token: Token, event: EthereumEvent): TokenDayData {
