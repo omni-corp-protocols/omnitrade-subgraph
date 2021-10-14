@@ -3,7 +3,7 @@ import { log, BigInt, BigDecimal, Address, EthereumEvent } from '@graphprotocol/
 import { ERC20 } from '../types/Factory/ERC20'
 import { ERC20SymbolBytes } from '../types/Factory/ERC20SymbolBytes'
 import { ERC20NameBytes } from '../types/Factory/ERC20NameBytes'
-import { Token, Curve } from '../types/schema'
+import { Token, Curve, LiquidityPosition, User, Bundle, LiquidityPositionSnapshot } from '../types/schema'
 import { Factory as FactoryContract } from '../types/templates/Curve/Factory'
 import { TokenDefinition } from './tokenDefinition'
 
@@ -135,4 +135,59 @@ export function fetchTokenDecimals(tokenAddress: Address): BigInt {
     decimalValue = decimalResult.value
   }
   return BigInt.fromI32(decimalValue as i32)
+}
+
+export function createLiquidityPosition(exchange: Address, user: Address): LiquidityPosition {
+  let id = exchange
+    .toHexString()
+    .concat('-')
+    .concat(user.toHexString())
+  let liquidityTokenBalance = LiquidityPosition.load(id)
+  if (liquidityTokenBalance === null) {
+    let curve = Curve.load(exchange.toHexString())
+    curve.liquidityProviderCount = curve.liquidityProviderCount.plus(ONE_BI)
+    liquidityTokenBalance = new LiquidityPosition(id)
+    liquidityTokenBalance.liquidityTokenBalance = ZERO_BD
+    liquidityTokenBalance.curve = exchange.toHexString()
+    liquidityTokenBalance.user = user.toHexString()
+    liquidityTokenBalance.save()
+    curve.save()
+  }
+  if (liquidityTokenBalance === null) log.error('LiquidityTokenBalance is null', [id])
+  return liquidityTokenBalance as LiquidityPosition
+}
+
+export function createUser(address: Address): void {
+  let user = User.load(address.toHexString())
+  if (user === null) {
+    user = new User(address.toHexString())
+    user.usdSwapped = ZERO_BD
+    user.save()
+  }
+}
+
+export function createLiquiditySnapshot(position: LiquidityPosition, event: EthereumEvent): void {
+  let timestamp = event.block.timestamp.toI32()
+  let bundle = Bundle.load('1')
+  let curve = Curve.load(position.curve)
+  let token0 = Token.load(curve.token0)
+  let token1 = Token.load(curve.token1)
+
+  // create new snapshot
+  let snapshot = new LiquidityPositionSnapshot(position.id.concat(timestamp.toString()))
+  snapshot.liquidityPosition = position.id
+  snapshot.timestamp = timestamp
+  snapshot.block = event.block.number.toI32()
+  snapshot.user = position.user
+  snapshot.curve = position.curve
+  snapshot.token0PriceUSD = token0.derivedNative.times(bundle.nativePrice)
+  snapshot.token1PriceUSD = token1.derivedNative.times(bundle.nativePrice)
+  snapshot.reserve0 = curve.reserve0
+  snapshot.reserve1 = curve.reserve1
+  snapshot.reserveUSD = curve.reserveUSD
+  snapshot.liquidityTokenTotalSupply = curve.totalSupply
+  snapshot.liquidityTokenBalance = position.liquidityTokenBalance
+  snapshot.liquidityPosition = position.id
+  snapshot.save()
+  position.save()
 }
