@@ -30,6 +30,8 @@ dataSources:
           file: ./abis/ERC20SymbolBytes.json
         - name: ERC20NameBytes
           file: ./abis/ERC20NameBytes.json
+        - name: Pair
+          file: ./abis/pair.json
       eventHandlers:
         - event: NewCurve(indexed address,indexed bytes32,indexed address)
           handler: handleNewCurve
