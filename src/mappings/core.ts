@@ -42,6 +42,16 @@ export function handleTransfer(event: Transfer): void {
     uniHandleTransfer(event)
     uniHandleSync(event)
     uniHandleMint(event)
+
+    // remove liquidity
+  } else if (
+    event.params.from.toHexString() != ADDRESS_ZERO &&
+    event.params.to.toHexString() == ADDRESS_ZERO &&
+    event.params.value.gt(ZERO_BI)
+  ) {
+    uniHandleTransfer(event)
+    uniHandleSync(event)
+    uniHandleBurn(event)
   }
 }
 
@@ -312,11 +322,11 @@ function uniHandleMint(event: Transfer): void {
   let token1 = Token.load(pair.token1)
 
   let curveContract = CurveContract.bind(event.address)
-  let liquidityResult = curveContract.viewDeposit(event.params.value)
+  let viewDepositResult = curveContract.viewDeposit(event.params.value)
 
   // update exchange info (except balances, sync will cover that)
-  let token0Amount = convertTokenToDecimal(liquidityResult.value1[0], token0.decimals)
-  let token1Amount = convertTokenToDecimal(liquidityResult.value1[1], token1.decimals)
+  let token0Amount = convertTokenToDecimal(viewDepositResult.value1[0], token0.decimals)
+  let token1Amount = convertTokenToDecimal(viewDepositResult.value1[1], token1.decimals)
 
   // update txn counts
   token0.txCount = token0.txCount.plus(ONE_BI)
@@ -358,7 +368,7 @@ function uniHandleMint(event: Transfer): void {
   updateTokenDayData(token1 as Token, event)
 }
 
-function uniHandleBurn(event: EthereumEvent): void {
+function uniHandleBurn(event: Transfer): void {
   let transaction = Transaction.load(event.transaction.hash.toHexString())
 
   // safety check
@@ -372,11 +382,14 @@ function uniHandleBurn(event: EthereumEvent): void {
   let pair = Curve.load(event.address.toHex())
   let uniswap = CurveFactory.load(FACTORY_ADDRESS)
 
+  let curveContract = CurveContract.bind(event.address)
+  let viewWithdrawResult = curveContract.viewWithdraw(event.params.value)
+
   //update token info
   let token0 = Token.load(pair.token0)
   let token1 = Token.load(pair.token1)
-  let token0Amount = convertTokenToDecimal(event.params.amount0, token0.decimals)
-  let token1Amount = convertTokenToDecimal(event.params.amount1, token1.decimals)
+  let token0Amount = convertTokenToDecimal(viewWithdrawResult[0], token0.decimals)
+  let token1Amount = convertTokenToDecimal(viewWithdrawResult[1], token1.decimals)
 
   // update txn counts
   token0.txCount = token0.txCount.plus(ONE_BI)
