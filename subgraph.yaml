@@ -54,6 +54,10 @@ templates:
           file: ./abis/curve.json
         - name: Factory
           file: ./abis/factory.json
+        - name: Pair
+          file: ./abis/pair.json
+        - name: Assimilator
+          file: ./abis/assimilator.json
       eventHandlers:
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer

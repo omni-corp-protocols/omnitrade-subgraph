@@ -8,7 +8,7 @@ const NATIVE_ADDRESS = '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c' // WBNB
 const BUSD_NATIVE_PAIR = '0x58f876857a02d6762e0101bb5c46a8c1ed44dc16'
 
 export function getNativePriceInUSD(): BigDecimal {
-  let busdPair = Pair.bind(Address.fromString(BUSD_NATIVE_PAIR)) // usdc is token0
+  let busdPair = Pair.bind(Address.fromString(BUSD_NATIVE_PAIR))
   if (busdPair !== null) {
     let getReservesResult = busdPair.getReserves()
     return getReservesResult.value1.div(getReservesResult.value0).toBigDecimal()
