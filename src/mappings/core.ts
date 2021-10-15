@@ -41,6 +41,7 @@ export function handleTransfer(event: Transfer): void {
   ) {
     uniHandleTransfer(event)
     uniHandleSync(event)
+    uniHandleMint(event)
   }
 }
 
@@ -245,15 +246,15 @@ function uniHandleSync(event: Transfer): void {
   let assimilatorContract0 = AssimilatorContract.bind(assimilatorResult0)
   pair.token0Price = assimilatorContract0
     .getRate()
-    .div(BI_EXP_8)
     .toBigDecimal()
+    .div(BI_EXP_8.toBigDecimal())
 
   let assimilatorResult1 = pairContract.assimilator(Address.fromString(token1.id))
   let assimilatorContract1 = AssimilatorContract.bind(assimilatorResult1)
   pair.token1Price = assimilatorContract1
     .getRate()
-    .div(BI_EXP_8)
     .toBigDecimal()
+    .div(BI_EXP_8.toBigDecimal())
 
   pair.save()
 
@@ -299,7 +300,7 @@ function uniHandleSync(event: Transfer): void {
   token1.save()
 }
 
-function uniHandleMint(event: EthereumEvent): void {
+function uniHandleMint(event: Transfer): void {
   let transaction = Transaction.load(event.transaction.hash.toHexString())
   let mints = transaction.mints
   let mint = MintEvent.load(mints[mints.length - 1])
@@ -310,9 +311,12 @@ function uniHandleMint(event: EthereumEvent): void {
   let token0 = Token.load(pair.token0)
   let token1 = Token.load(pair.token1)
 
+  let curveContract = CurveContract.bind(event.address)
+  let liquidityResult = curveContract.viewDeposit(event.params.value)
+
   // update exchange info (except balances, sync will cover that)
-  let token0Amount = convertTokenToDecimal(event.params.amount0, token0.decimals)
-  let token1Amount = convertTokenToDecimal(event.params.amount1, token1.decimals)
+  let token0Amount = convertTokenToDecimal(liquidityResult.value1[0], token0.decimals)
+  let token1Amount = convertTokenToDecimal(liquidityResult.value1[1], token1.decimals)
 
   // update txn counts
   token0.txCount = token0.txCount.plus(ONE_BI)
@@ -335,7 +339,7 @@ function uniHandleMint(event: EthereumEvent): void {
   pair.save()
   uniswap.save()
 
-  mint.sender = event.params.sender
+  mint.sender = event.params.to
   mint.amount0 = token0Amount as BigDecimal
   mint.amount1 = token1Amount as BigDecimal
   mint.logIndex = event.logIndex
