@@ -34,14 +34,17 @@ function isCompleteMint(mintId: string): boolean {
 
 export function handleTransfer(event: Transfer): void {
   // add liquidity
-  if (event.params.from.toHexString() == ADDRESS_ZERO && event.params.to.toHexString() != ADDRESS_ZERO && event.params.value.gt(ZERO_BI)) {
+  if (
+    event.params.from.toHexString() == ADDRESS_ZERO &&
+    event.params.to.toHexString() != ADDRESS_ZERO &&
+    event.params.value.gt(ZERO_BI)
+  ) {
     uniHandleTransfer(event)
     uniHandleSync(event)
   }
 }
 
-export function handleTrade(event: Trade): void {
-}
+export function handleTrade(event: Trade): void {}
 
 function uniHandleTransfer(event: Transfer): void {
   let factory = CurveFactory.load(FACTORY_ADDRESS)
@@ -234,17 +237,23 @@ function uniHandleSync(event: Transfer): void {
 
   let pairContract = CurveContract.bind(event.address)
   let liquidityResult = pairContract.liquidity()
-  
+
   pair.reserve0 = convertTokenToDecimal(liquidityResult.value1[0], token0.decimals)
   pair.reserve1 = convertTokenToDecimal(liquidityResult.value1[1], token1.decimals)
 
   let assimilatorResult0 = pairContract.assimilator(Address.fromString(token0.id))
   let assimilatorContract0 = AssimilatorContract.bind(assimilatorResult0)
-  pair.token0Price = assimilatorContract0.getRate().div(BI_EXP_8).toBigDecimal()
+  pair.token0Price = assimilatorContract0
+    .getRate()
+    .div(BI_EXP_8)
+    .toBigDecimal()
 
   let assimilatorResult1 = pairContract.assimilator(Address.fromString(token1.id))
   let assimilatorContract1 = AssimilatorContract.bind(assimilatorResult1)
-  pair.token1Price = assimilatorContract1.getRate().div(BI_EXP_8).toBigDecimal()
+  pair.token1Price = assimilatorContract1
+    .getRate()
+    .div(BI_EXP_8)
+    .toBigDecimal()
 
   pair.save()
 
@@ -550,7 +559,9 @@ function uniHandleSwap(event: EthereumEvent): void {
 
   // swap specific updating for token0
   token0DayData.dailyVolumeToken = token0DayData.dailyVolumeToken.plus(amount0Total)
-  token0DayData.dailyVolumeNative = token0DayData.dailyVolumeNative.plus(amount0Total.times(token0.derivedNative as BigDecimal))
+  token0DayData.dailyVolumeNative = token0DayData.dailyVolumeNative.plus(
+    amount0Total.times(token0.derivedNative as BigDecimal)
+  )
   token0DayData.dailyVolumeUSD = token0DayData.dailyVolumeUSD.plus(
     amount0Total.times(token0.derivedNative as BigDecimal).times(bundle.nativePrice)
   )
@@ -558,7 +569,9 @@ function uniHandleSwap(event: EthereumEvent): void {
 
   // swap specific updating
   token1DayData.dailyVolumeToken = token1DayData.dailyVolumeToken.plus(amount1Total)
-  token1DayData.dailyVolumeNative = token1DayData.dailyVolumeNative.plus(amount1Total.times(token1.derivedNative as BigDecimal))
+  token1DayData.dailyVolumeNative = token1DayData.dailyVolumeNative.plus(
+    amount1Total.times(token1.derivedNative as BigDecimal)
+  )
   token1DayData.dailyVolumeUSD = token1DayData.dailyVolumeUSD.plus(
     amount1Total.times(token1.derivedNative as BigDecimal).times(bundle.nativePrice)
   )
