@@ -1,5 +1,5 @@
 /* eslint-disable prefer-const */
-import { BigInt, BigDecimal, store, Address, EthereumEvent } from '@graphprotocol/graph-ts'
+import { BigInt, BigDecimal, store, Address, EthereumEvent, log } from '@graphprotocol/graph-ts'
 import {
   Curve,
   Token,
@@ -52,6 +52,14 @@ export function handleTransfer(event: Transfer): void {
     uniHandleTransfer(event)
     uniHandleSync(event)
     uniHandleBurn(event)
+
+    // simple transfer
+  } else if (
+    event.params.from.toHexString() != ADDRESS_ZERO &&
+    event.params.to.toHexString() != ADDRESS_ZERO &&
+    event.params.value.gt(ZERO_BI)
+  ) {
+    uniHandleTransfer(event)
   }
 }
 
@@ -117,34 +125,34 @@ function uniHandleTransfer(event: Transfer): void {
     }
   }
 
-  // case where direct send first on ETH withdrawls
-  if (event.params.to.toHexString() == pair.id) {
-    let burns = transaction.burns
-    let burn = new BurnEvent(
-      event.transaction.hash
-        .toHexString()
-        .concat('-')
-        .concat(BigInt.fromI32(burns.length).toString())
-    )
-    burn.transaction = transaction.id
-    burn.curve = pair.id
-    burn.liquidity = value
-    burn.timestamp = transaction.timestamp
-    burn.to = event.params.to
-    burn.sender = event.params.from
-    burn.needsComplete = true
-    burn.transaction = transaction.id
-    burn.save()
+  // // case where direct send first on ETH withdrawls
+  // if (event.params.to.toHexString() == pair.id) {
+  //   let burns = transaction.burns
+  //   let burn = new BurnEvent(
+  //     event.transaction.hash
+  //       .toHexString()
+  //       .concat('-')
+  //       .concat(BigInt.fromI32(burns.length).toString())
+  //   )
+  //   burn.transaction = transaction.id
+  //   burn.curve = pair.id
+  //   burn.liquidity = value
+  //   burn.timestamp = transaction.timestamp
+  //   burn.to = event.params.to
+  //   burn.sender = event.params.from
+  //   burn.needsComplete = true
+  //   burn.transaction = transaction.id
+  //   burn.save()
 
-    // TODO: Consider using .concat() for handling array updates to protect
-    // against unintended side effects for other code paths.
-    burns.push(burn.id)
-    transaction.burns = burns
-    transaction.save()
-  }
+  //   // TODO: Consider using .concat() for handling array updates to protect
+  //   // against unintended side effects for other code paths.
+  //   burns.push(burn.id)
+  //   transaction.burns = burns
+  //   transaction.save()
+  // }
 
   // burn
-  if (event.params.to.toHexString() == ADDRESS_ZERO && event.params.from.toHexString() == pair.id) {
+  if (event.params.to.toHexString() == ADDRESS_ZERO) {
     pair.totalSupply = pair.totalSupply.minus(value)
     pair.save()
 
