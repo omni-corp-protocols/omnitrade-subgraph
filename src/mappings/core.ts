@@ -63,7 +63,10 @@ export function handleTransfer(event: Transfer): void {
   }
 }
 
-export function handleTrade(event: Trade): void {}
+export function handleTrade(event: Trade): void {
+  uniHandleSync(event)
+  uniHandleSwap(event)
+}
 
 function uniHandleTransfer(event: Transfer): void {
   let factory = CurveFactory.load(FACTORY_ADDRESS)
@@ -241,7 +244,7 @@ function uniHandleTransfer(event: Transfer): void {
   transaction.save()
 }
 
-function uniHandleSync(event: Transfer): void {
+function uniHandleSync(event: EthereumEvent): void {
   let pair = Curve.load(event.address.toHex())
   let token0 = Token.load(pair.token0)
   let token1 = Token.load(pair.token1)
@@ -441,14 +444,31 @@ function uniHandleBurn(event: Transfer): void {
   updateTokenDayData(token1 as Token, event)
 }
 
-function uniHandleSwap(event: EthereumEvent): void {
+function uniHandleSwap(event: Trade): void {
   let pair = Curve.load(event.address.toHexString())
   let token0 = Token.load(pair.token0)
   let token1 = Token.load(pair.token1)
-  let amount0In = convertTokenToDecimal(event.params.amount0In, token0.decimals)
-  let amount1In = convertTokenToDecimal(event.params.amount1In, token1.decimals)
-  let amount0Out = convertTokenToDecimal(event.params.amount0Out, token0.decimals)
-  let amount1Out = convertTokenToDecimal(event.params.amount1Out, token1.decimals)
+
+  let amount0In = ZERO_BD
+  let amount1In = ZERO_BD
+  let amount0Out = ZERO_BD
+  let amount1Out = ZERO_BD
+
+  if (pair.token0 == event.params.origin.toHexString()) {
+    amount0In = convertTokenToDecimal(event.params.originAmount, token0.decimals)
+    amount1Out = convertTokenToDecimal(event.params.targetAmount, token1.decimals)
+  } else if (pair.token0 == event.params.target.toHexString()) {
+    amount1In = convertTokenToDecimal(event.params.originAmount, token1.decimals)
+    amount0Out = convertTokenToDecimal(event.params.targetAmount, token0.decimals)
+  } else {
+    // log other cases
+    log.error('Unhandled case in uniHandleSwap(): {}, {}, {}, {}', [
+      pair.token0,
+      pair.token1,
+      event.params.origin.toHexString(),
+      event.params.target.toHexString()
+    ])
+  }
 
   // totals for volume updates
   let amount0Total = amount0Out.plus(amount0In)
@@ -537,12 +557,12 @@ function uniHandleSwap(event: EthereumEvent): void {
   swap.curve = pair.id
   swap.timestamp = transaction.timestamp
   swap.transaction = transaction.id
-  swap.sender = event.params.sender
+  swap.sender = event.params.trader
   swap.amount0In = amount0In
   swap.amount1In = amount1In
   swap.amount0Out = amount0Out
   swap.amount1Out = amount1Out
-  swap.to = event.params.to
+  swap.to = event.params.trader
   swap.from = event.transaction.from
   swap.logIndex = event.logIndex
   // use the tracked amount if we have it
