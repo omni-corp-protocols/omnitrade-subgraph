@@ -97,7 +97,6 @@ type Curve @entity {
   swaps: [Swap!]! @derivedFrom(field: "curve")
 }
 
-
 type User @entity {
   id: ID!
   liquidityPositions: [LiquidityPosition!] @derivedFrom(field: "user")

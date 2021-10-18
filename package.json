@@ -8,7 +8,7 @@
     "create-local": "graph create omni-corp-protocols/omnitrade-bsc --node http://127.0.0.1:8020",
     "deploy-local": "graph deploy omni-corp-protocols/omnitrade-bsc --debug --ipfs http://localhost:5001 --node http://127.0.0.1:8020",
     "deploy": "graph deploy --access-token < ACCESS TOKEN > --product hosted-service --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ omni-corp-protocols/omnitrade-bsc subgraph.yaml",
-    "prettier": "./node_modules/.bin/prettier --write \"**/*.{json,md,ts}\""
+    "prettier": "./node_modules/.bin/prettier --write \"**/*.{json,md,ts,yaml,graphql}\""
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "^0.16.0",
