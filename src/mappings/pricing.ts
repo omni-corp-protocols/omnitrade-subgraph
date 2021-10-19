@@ -24,10 +24,10 @@ let WHITELIST: string[] = [
 ]
 
 // minimum liquidity required to count towards tracked volume for pairs with small # of Lps
-let MINIMUM_USD_THRESHOLD_NEW_PAIRS = BigDecimal.fromString('1')
+let MINIMUM_USD_THRESHOLD_NEW_PAIRS = BigDecimal.fromString('0')
 
 // minimum liquidity for price to get tracked
-let MINIMUM_LIQUIDITY_THRESHOLD_ETH = BigDecimal.fromString('0.01')
+// let MINIMUM_LIQUIDITY_THRESHOLD_ETH = BigDecimal.fromString('0')
 
 /**
  * Search through graph to find derived Eth per token.
@@ -44,14 +44,17 @@ export function findNativePerToken(token: Token): BigDecimal {
     let curveAddressD2 = factoryContract.getCurve(Address.fromString(WHITELIST[i]), Address.fromString(token.id))
     let curveAddress = curveAddressD1.toHexString() != ADDRESS_ZERO ? curveAddressD1 : curveAddressD2
     if (curveAddress.toHexString() != ADDRESS_ZERO) {
+      let bundle = Bundle.load('1')
       let curve = Curve.load(curveAddress.toHexString())
-      if (curve.token0 == token.id && curve.reserveNative.gt(MINIMUM_LIQUIDITY_THRESHOLD_ETH)) {
-        let token1 = Token.load(curve.token1)
-        return curve.token1Price.times(token1.derivedNative as BigDecimal) // return token1 per our token * Native per token 1
+      if (curve.token0 == token.id) {
+        return curve.token1Price.div(bundle.nativePrice as BigDecimal) // return token1PriceUsd / Native price in usd
+        // let token1 = Token.load(curve.token1)
+        // return curve.token1Price.times(token1.derivedNative as BigDecimal) // return token1 per our token * Native per token 1
       }
-      if (curve.token1 == token.id && curve.reserveNative.gt(MINIMUM_LIQUIDITY_THRESHOLD_ETH)) {
-        let token0 = Token.load(curve.token0)
-        return curve.token0Price.times(token0.derivedNative as BigDecimal) // return token0 per our token * ETH per token 0
+      if (curve.token1 == token.id) {
+        return curve.token0Price.div(bundle.nativePrice as BigDecimal) // return token0PriceUsd / Native price in usd
+        // let token0 = Token.load(curve.token0)
+        // return curve.token0Price.times(token0.derivedNative as BigDecimal) // return token0 per our token * ETH per token 0
       }
     }
   }
