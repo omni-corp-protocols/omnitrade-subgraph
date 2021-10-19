@@ -21,7 +21,7 @@ export class TokenDefinition {
 
     // Add USDO
     let tokenUSDO = new TokenDefinition(
-      Address.fromString('0x5801D0e1C7D977D78E4890880B8E579eb4943276'),
+      Address.fromString('0x5801d0e1c7d977d78e4890880b8e579eb4943276'),
       'USDO',
       'USD Open Dollar',
       BigInt.fromI32(18)

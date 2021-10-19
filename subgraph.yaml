@@ -61,3 +61,5 @@ templates:
       eventHandlers:
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer
+        - event: Trade(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTrade
